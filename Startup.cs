@@ -33,7 +33,7 @@ namespace ReusableStateBotTemplate
             services.AddSingleton<MainDialog>();
 
             // Create the bot as a transient. In this case the ASP Controller is expecting an IBot.
-            services.AddTransient<IBot, DialogBot<MainDialog>>();
+            services.AddTransient<IBot, DialogAndWelcomeBot<MainDialog>>();
         }
 
         public void ConfigureState(IServiceCollection services)

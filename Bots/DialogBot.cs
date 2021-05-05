@@ -7,7 +7,6 @@ using Microsoft.Bot.Builder;
 using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
-using ReusableStateBotTemplate.Helpers;
 using ReusableStateBotTemplate.Services;
 using System.Threading;
 using System.Threading.Tasks;
@@ -47,7 +46,7 @@ namespace ReusableStateBotTemplate.Bots
             Logger.LogInformation("Running dialog with Message Activity.");
 
             // Run the Dialog with the new message Activity.
-            await Dialog.Run(turnContext, _stateService.DialogStateAccessor, cancellationToken);
+            await Dialog.RunAsync(turnContext, _stateService.ConversationState.CreateProperty<DialogState>("DialogState"), cancellationToken);
         }
     }
 }
