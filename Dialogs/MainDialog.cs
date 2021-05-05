@@ -8,6 +8,7 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using Microsoft.Recognizers.Text.DataTypes.TimexExpression;
+using ReusableStateBotTemplate.Models;
 using ReusableStateBotTemplate.Services;
 using System;
 using System.Collections.Generic;
@@ -19,7 +20,7 @@ namespace ReusableStateBotTemplate.Dialogs
 {
     public class MainDialog : ComponentDialog
     {
-        
+
         protected readonly ILogger Logger;
         private readonly StateService _stateService;
 
@@ -31,12 +32,11 @@ namespace ReusableStateBotTemplate.Dialogs
             Logger = logger;
 
             AddDialog(new TextPrompt(nameof(TextPrompt)));
-            
+
             AddDialog(new WaterfallDialog(nameof(WaterfallDialog), new WaterfallStep[]
             {
                 IntroStepAsync,
                 ActStepAsync,
-                FinalStepAsync,
             }));
 
             // The initial child Dialog to run.
@@ -45,22 +45,33 @@ namespace ReusableStateBotTemplate.Dialogs
 
         private async Task<DialogTurnResult> IntroStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            return null;
+            UserProfile userProfile = await _stateService.UserProfileAccessor.GetAsync(stepContext.Context, () => new UserProfile());
+            if (string.IsNullOrEmpty(userProfile.Name))
+            {
+                return await stepContext.PromptAsync(nameof(TextPrompt), new PromptOptions
+                {
+                    Prompt = MessageFactory.Text("What is your name?")
+                }, cancellationToken);
+            }
+            else
+            {
+                return await stepContext.NextAsync(null, cancellationToken);
+            }
         }
 
         private async Task<DialogTurnResult> ActStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            return null;
+            UserProfile userProfile = await _stateService.UserProfileAccessor.GetAsync(stepContext.Context, () => new UserProfile());
+            if (string.IsNullOrEmpty(userProfile.Name))
+            {
+                userProfile.Name = (string)stepContext.Result;
+
+                await _stateService.UserProfileAccessor.SetAsync(stepContext.Context, userProfile);
+            }
+
+            await stepContext.Context.SendActivityAsync(MessageFactory.Text(String.Format("Hi {0}, How can I help you today?", userProfile.Name)), cancellationToken);
+            return await stepContext.EndDialogAsync(null, cancellationToken);
         }
 
-        
-        private async Task<DialogTurnResult> FinalStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        {
-            
-
-            // Restart the main dialog with a different message the second time around
-            var promptMessage = "What else can I do for you?";
-            return await stepContext.ReplaceDialogAsync(InitialDialogId, promptMessage, cancellationToken);
-        }
     }
 }
